@@ -1,0 +1,42 @@
+# Starter pipeline
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  solution: './apiTempo/*.sln'
+  buildPlataform: 'anyCpu'
+  buildConfiguration: 'release'
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Install .Net sdk'
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+
+- script: |
+    dotnet restore $(solution)
+  displayName: 'Restore solution'
+
+- script: dotnet build $(solution) --configuration $(buildConfiguration)
+  displayName: 'Build solution'
+  
+- script: dotnet test $(solution) --configuration $(buildConfiguration) --nobuild --collect:"XPlat Code Coverage"
+  displayName: 'Test solution'
+
+# Adicione aqui os comandos para publicar seus artefatos
+# Exemplo:
+# - task: PublishPipelineArtifact
+#   inputs:
+#     artifact: '$(Build.ArtifactStagingDirectory)'
+#   displayName: 'Publish artifacts'
+
+- task: Docker@2
+  inputs:
+    containerRegistry: 'acrApiDevops'
+    repository: 'devapi'
+    command: 'buildAndPush'
+    Dockerfile: './apiTempo/Dockerfile'
